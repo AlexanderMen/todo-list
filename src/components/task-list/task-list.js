@@ -2,16 +2,16 @@ import React from 'react';
 import './task-list.css';
 import Task from '../task';
 
-const TaskList = ( {tasks, onDelete} ) => {
+const TaskList = ( {tasks} ) => {
+	
 	const listElems = tasks.map((item) => {
+		
 		const { id, ...itemProps} = item;
 		
 		return (
 			<Task
 				key={id}
-				{...itemProps}
-				onDelete={() => onDelete(id)}
-			/>
+				{...itemProps} />
 		);
 	});
 	
