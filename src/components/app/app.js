@@ -9,44 +9,76 @@ export default class App extends Component {
 	state = {
 		tasksData: [
 			{
-				taskDescription: 'Completed task',
+				taskDescription: 'Go for a walk',
 				taskCreated: new Date() - 16000,
 				id: 1,
 				done: false,
-				isHidden: false
+				isHidden: false,
+				taskType: ''
 			},
 			{
-				taskDescription: 'Editing task',
+				taskDescription: 'Do my home task',
 				taskCreated: new Date() - 290000,
 				id: 2,
 				done: false,
-				isHidden: false
+				isHidden: false,
+				taskType: ''
 			},
 			{
-				taskDescription: 'Active task',
+				taskDescription: 'Have a dinner',
 				taskCreated: new Date() - 280000,
 				id: 3,
 				done: false,
-				isHidden: false
+				isHidden: false,
+				taskType: ''
 			}
-		]
+		],
+		
+		showElems: ''
 	};
 
 	findElem = (id, arr) => arr.findIndex(item => item.id === id);
 
+	editTask = (id) => {
+		this.setState(({tasksData}) => {
+			const taskIndex = this.findElem(id, tasksData);
+			let newTasksData = [...tasksData.slice(0)];
+			newTasksData[taskIndex].taskType = 'editing';
+			
+			return {tasksData: newTasksData};
+		});
+	};
+
+	taskWasEdited = (id, newTaskDescription) => {
+		this.setState(({tasksData}) => {
+			const taskIndex = this.findElem(id, tasksData);
+			let newTasksData = [...tasksData.slice(0)];
+			let elem = newTasksData[taskIndex];
+			
+			elem.taskDescription = newTaskDescription;
+			elem.taskType = '';
+			if (elem.done) elem.taskType = 'completed'
+			
+			return {tasksData: newTasksData};
+		});
+	};
+
 	addTask = (task) => {
-		const id = Math.round(Math.random()*1000);
-		const newTask = {
-				taskDescription: task,
-				taskCreated: new Date() - 16000,
-				id,
-				done: false,
-				isHidden: false
-			};
-		let newArr = [...this.state.tasksData]
-		newArr.push(newTask);
-		
-		this.setState({tasksData: newArr});
+		this.setState(({tasksData}) => {
+			const id = Math.round(Math.random()*1000);
+			const newTask = {
+					taskDescription: task,
+					taskCreated: new Date(),
+					id,
+					done: false,
+					isHidden: false,
+					taskType: ''
+				};
+			let newArr = [...tasksData.slice(0)]
+			newArr.push(newTask);
+
+			return {tasksData: newArr};
+		});
 	};
 
 	deleteTask = (id) => {
@@ -61,9 +93,19 @@ export default class App extends Component {
 	};
 
 	isDone = (id) => {
-		this.setState(({tasksData}) => {
+		this.setState(({tasksData, showElems}) => {
 			const taskIndex = this.findElem(id, tasksData);
-			const newTaskItem = {...tasksData[taskIndex], done: !tasksData[taskIndex].done};
+			const elem = tasksData[taskIndex];
+			const done = !elem.done;
+			
+			let taskType = '';
+			if (done) taskType = 'completed'
+			
+			let isHidden = false;
+			if (showElems === 'Active' && done) isHidden = true
+			if (showElems === 'Completed' && !done) isHidden = true
+			
+			const newTaskItem = {...elem, done, taskType, isHidden};
 			let newTasksData = [...tasksData.slice(0, taskIndex),
 												  newTaskItem,
 												  ...tasksData.slice(taskIndex + 1)];
@@ -72,20 +114,22 @@ export default class App extends Component {
 		});
 	};
 
-	isHidden = (done) => {
+	isHidden = (done, showElems) => {
 		this.setState(({tasksData}) => {
 			
 			const newTasksData = tasksData.map((el) => {
 				let newEl = {...el};
 				
 				newEl.isHidden = false;
-				if (newEl.done === !done) {
-					newEl.isHidden = true;
-				};
+				if (newEl.done === !done) newEl.isHidden = true
+				
 				return newEl;
 			});
 			
-			return {tasksData: newTasksData};
+			return {
+				tasksData: newTasksData,
+				showElems
+			};
 		});
 	};
 
@@ -99,7 +143,10 @@ export default class App extends Component {
 				return newEl;
 			});
 			
-			return {tasksData: newTasksData};
+			return {
+				tasksData: newTasksData,
+				showElems: ''
+			};
 		});
 	};
 
@@ -121,6 +168,8 @@ export default class App extends Component {
 				<section className="main">
 					<TaskList 
 						tasks={this.state.tasksData}
+						onEditTask={this.editTask}
+						onTaskEdited={this.taskWasEdited}
 						onDelete={this.deleteTask}
 						onDone={this.isDone} />
 					<Footer

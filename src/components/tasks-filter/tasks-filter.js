@@ -1,8 +1,14 @@
 import React, {Component} from 'react';
+import PropTypes from 'prop-types';
 import './tasks-filter.css';
 
 export default class TasksFilter extends Component {
 	state = {selected: ["selected", "", ""]};
+
+	static propTypes = {
+		onHidden: PropTypes.func.isRequired,
+		onVisibleAll: PropTypes.func.isRequired
+	};
 
 	isSelected = (num) => {
 		let newArr = ['', '', ''];
@@ -28,7 +34,7 @@ export default class TasksFilter extends Component {
 					<button
 						className={this.state.selected[1]}
 						onClick={() => {
-							onHidden(false);
+							onHidden(false, 'Active');
 							this.isSelected(1);
 						}}>Active</button>
 				</li>
@@ -36,7 +42,7 @@ export default class TasksFilter extends Component {
 					<button
 						className={this.state.selected[2]}
 						onClick={() => {
-							onHidden(true);
+							onHidden(true, 'Completed');
 							this.isSelected(2);
 						}}>Completed</button>
 				</li>
