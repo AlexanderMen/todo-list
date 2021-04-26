@@ -1,9 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import './task-list.css';
-import Task from '../task';
+import './TaskList.css';
+import Task from '../Task';
 
-const TaskList = ({ tasks, onDelete, onDone, onEditTask, onTaskEdited }) => {
+const TaskList = ({ tasks, showingElems, onDelete, onComplete, onEditTask, onUpdateTask }) => {
   const listElems = tasks.map((item) => {
     const { ...itemProps } = item;
 
@@ -11,10 +11,11 @@ const TaskList = ({ tasks, onDelete, onDone, onEditTask, onTaskEdited }) => {
       <Task
         key={item.id}
         {...itemProps}
+        showingElems={showingElems}
         onEditTask={() => onEditTask(item.id)}
-        onTaskEdited={onTaskEdited}
+        onUpdateTask={onUpdateTask}
         onDelete={() => onDelete(item.id)}
-        onDone={() => onDone(item.id)}
+        onComplete={() => onComplete(item.id)}
       />
     );
   });
@@ -24,10 +25,11 @@ const TaskList = ({ tasks, onDelete, onDone, onEditTask, onTaskEdited }) => {
 
 TaskList.propTypes = {
   tasks: PropTypes.arrayOf(PropTypes.object).isRequired,
+	showingElems: PropTypes.string.isRequired,
   onDelete: PropTypes.func.isRequired,
-  onDone: PropTypes.func.isRequired,
+  onComplete: PropTypes.func.isRequired,
   onEditTask: PropTypes.func.isRequired,
-  onTaskEdited: PropTypes.func.isRequired,
+  onUpdateTask: PropTypes.func.isRequired,
 };
 
 export default TaskList;

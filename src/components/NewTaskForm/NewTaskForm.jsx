@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import './new-task-form.css';
+import './NewTaskForm.css';
 
 export default class NewTaskForm extends Component {
   state = {
@@ -23,7 +23,8 @@ export default class NewTaskForm extends Component {
     evt.preventDefault();
     const { onAdd } = this.props;
     const { value } = this.state;
-
+		
+		if (!value.trim()) return
     onAdd(value);
     this.setState({ value: '' });
   };

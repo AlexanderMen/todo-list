@@ -1,40 +1,72 @@
-import React, { Component } from 'react';
-import './app.css';
+import React, { PureComponent } from 'react';
+import PropTypes from 'prop-types';
+import { formatDistanceToNow } from 'date-fns';
+import './App.css';
 
-import NewTaskForm from '../new-task-form';
-import TaskList from '../task-list';
-import Footer from '../footer';
+import NewTaskForm from '../NewTaskForm';
+import TaskList from '../TaskList';
+import Footer from '../Footer';
 
-export default class App extends Component {
+export default class App extends PureComponent {
+	static defaultProps = {
+    refreshInterval: 30000,
+  };
+	
+	static propTypes = {
+    refreshInterval: PropTypes.number,
+	};
+	
   state = {
     tasksData: [
       {
         taskDescription: 'Go for a walk',
-        taskCreated: new Date() - 16000,
+        taskCreated: Date.now(),
+				taskCreatedToNow: formatDistanceToNow(Date.now(), { includeSeconds: true }),
         id: 1,
         done: false,
-        isHidden: false,
-        taskType: '',
+        taskType: 'active',
       },
       {
         taskDescription: 'Do my home task',
-        taskCreated: new Date() - 290000,
+        taskCreated: Date.now(),
+				taskCreatedToNow: formatDistanceToNow(Date.now(), { includeSeconds: true }),
         id: 2,
         done: false,
-        isHidden: false,
-        taskType: '',
+        taskType: 'active',
       },
       {
         taskDescription: 'Have a dinner',
-        taskCreated: new Date() - 280000,
+        taskCreated: Date.now(),
+				taskCreatedToNow: formatDistanceToNow(Date.now(), { includeSeconds: true }),
         id: 3,
         done: false,
-        isHidden: false,
-        taskType: '',
+        taskType: 'active',
       },
     ],
 
-    showElems: '',
+    showingElems: 'all',
+  };
+	
+	componentDidMount() {
+    const { refreshInterval } = this.props;
+    this.timerId = setInterval(this.refreshTaskTime, refreshInterval);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.timerId);
+  }
+	
+	refreshTaskTime = () => {
+		this.setState(({ tasksData }) => {
+			const newTasksData = tasksData.map((elem) => {
+				const newElem = {...elem};
+				
+				newElem.taskCreatedToNow = formatDistanceToNow(newElem.taskCreated, { includeSeconds: true });
+				return newElem;
+			});
+			
+			return { tasksData: newTasksData };
+		});
   };
 
   findElem = (id, arr) => arr.findIndex((item) => item.id === id);
@@ -43,20 +75,21 @@ export default class App extends Component {
     this.setState(({ tasksData }) => {
       const taskIndex = this.findElem(id, tasksData);
       const newTasksData = [...tasksData.slice(0)];
-      newTasksData[taskIndex].taskType = 'editing';
-
+			const elem = newTasksData[taskIndex];
+			
+      elem.taskType += ' editing';
       return { tasksData: newTasksData };
     });
   };
 
-  taskWasEdited = (id, newTaskDescription) => {
+  updateTask = (id, newTaskDescription) => {
     this.setState(({ tasksData }) => {
       const taskIndex = this.findElem(id, tasksData);
       const newTasksData = [...tasksData.slice(0)];
       const elem = newTasksData[taskIndex];
-
-      elem.taskDescription = newTaskDescription;
-      elem.taskType = '';
+			
+			elem.taskDescription = newTaskDescription;
+      elem.taskType = 'active';
       if (elem.done) elem.taskType = 'completed';
 
       return { tasksData: newTasksData };
@@ -66,16 +99,21 @@ export default class App extends Component {
   addTask = (task) => {
     this.setState(({ tasksData }) => {
       const id = Math.round(Math.random() * 1000);
+			const taskCreatedTime = Date.now();
       const newTask = {
         taskDescription: task,
-        taskCreated: new Date(),
+        taskCreated: taskCreatedTime,
+				taskCreatedToNow: formatDistanceToNow(taskCreatedTime, { includeSeconds: true }),
         id,
         done: false,
-        isHidden: false,
-        taskType: '',
+        taskType: 'active',
       };
       const newArr = [...tasksData.slice(0)];
       newArr.push(newTask);
+			
+			const { refreshInterval } = this.props;
+			clearInterval(this.timerId);
+    	this.timerId = setInterval(this.refreshTaskTime, refreshInterval);
 
       return { tasksData: newArr };
     });
@@ -91,59 +129,23 @@ export default class App extends Component {
     });
   };
 
-  isDone = (id) => {
-    this.setState(({ tasksData, showElems }) => {
+  isTaskComplete = (id) => {
+    this.setState(({ tasksData }) => {
       const taskIndex = this.findElem(id, tasksData);
       const elem = tasksData[taskIndex];
       const done = !elem.done;
 
-      let taskType = '';
+      let taskType = 'active';
       if (done) taskType = 'completed';
 
-      let isHidden = false;
-      if (showElems === 'Active' && done) isHidden = true;
-      if (showElems === 'Completed' && !done) isHidden = true;
-
-      const newTaskItem = { ...elem, done, taskType, isHidden };
+      const newTaskItem = { ...elem, done, taskType };
       const newTasksData = [...tasksData.slice(0, taskIndex), newTaskItem, ...tasksData.slice(taskIndex + 1)];
 
       return { tasksData: newTasksData };
     });
   };
 
-  isHidden = (done, showElems) => {
-    this.setState(({ tasksData }) => {
-      const newTasksData = tasksData.map((el) => {
-        const newEl = { ...el };
-
-        newEl.isHidden = false;
-        if (newEl.done === !done) newEl.isHidden = true;
-
-        return newEl;
-      });
-
-      return {
-        tasksData: newTasksData,
-        showElems,
-      };
-    });
-  };
-
-  visibleAll = () => {
-    this.setState(({ tasksData }) => {
-      const newTasksData = tasksData.map((el) => {
-        const newEl = { ...el };
-
-        newEl.isHidden = false;
-        return newEl;
-      });
-
-      return {
-        tasksData: newTasksData,
-        showElems: '',
-      };
-    });
-  };
+  showElems = showingElems => this.setState({showingElems,});
 
   clearCompleted = () => {
     const { tasksData } = this.state;
@@ -152,7 +154,7 @@ export default class App extends Component {
   };
 
   render() {
-    const { tasksData } = this.state;
+    const { tasksData, showingElems } = this.state;
     const tasksLeft = tasksData.filter((el) => !el.done).length;
 
     return (
@@ -164,16 +166,16 @@ export default class App extends Component {
         <section className="main">
           <TaskList
             tasks={tasksData}
+            showingElems={showingElems}
             onEditTask={this.editTask}
-            onTaskEdited={this.taskWasEdited}
+            onUpdateTask={this.updateTask}
             onDelete={this.deleteTask}
-            onDone={this.isDone}
+            onComplete={this.isTaskComplete}
           />
           <Footer
             tasksLeft={tasksLeft}
             onClearCompleted={this.clearCompleted}
-            onHidden={this.isHidden}
-            onVisibleAll={this.visibleAll}
+            onShowElems={this.showElems}
           />
         </section>
       </section>
