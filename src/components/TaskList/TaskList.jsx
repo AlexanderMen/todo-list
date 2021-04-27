@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import './TaskList.css';
-import Task from '../Task';
+import { Task } from '../Task';
 
 const TaskList = ({ tasks, showingElems, onDelete, onComplete, onEditTask, onUpdateTask }) => {
   const listElems = tasks.map((item) => {

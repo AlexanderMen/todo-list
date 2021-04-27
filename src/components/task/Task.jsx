@@ -1,11 +1,18 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import { formatDistanceToNow } from 'date-fns';
 import './Task.css';
 
-export default class Task extends Component {
+const taskTypeStatuses = {
+	active: 'active',
+	completed: 'completed',
+	editing: ' editing',
+};
+
+class Task extends Component {
 
   static propTypes = {
-		taskCreatedToNow: PropTypes.string.isRequired,
+		taskCreated: PropTypes.number.isRequired,
     taskDescription: PropTypes.string.isRequired,
     id: PropTypes.number.isRequired,
     showingElems: PropTypes.string.isRequired,
@@ -40,14 +47,15 @@ export default class Task extends Component {
   inputChange = (evt) => this.setState({ value: evt.target.value });
 
   render() {
-    const { taskDescription, onComplete, onDelete, onEditTask, taskType, showingElems, taskCreatedToNow } = this.props;
+    const { taskDescription, onComplete, onDelete, onEditTask, taskType, showingElems, taskCreated } = this.props;
     const { value } = this.state;
+		const taskCreatedToNow = formatDistanceToNow(taskCreated, { includeSeconds: true });
 		let hidden = true;
     let editInput = '';
 		
 		if (taskType.includes(showingElems) || showingElems.includes('all')) hidden = false
 		
-    if (taskType.includes('editing')) {
+    if (taskType.includes(taskTypeStatuses.editing)) {
       editInput = (
         <input type="text" className="edit" value={value} onChange={this.inputChange} onBlur={this.updateTask} />
       );
@@ -69,3 +77,5 @@ export default class Task extends Component {
     );
   }
 }
+
+export { taskTypeStatuses, Task } ;

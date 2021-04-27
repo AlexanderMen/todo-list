@@ -1,10 +1,10 @@
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
-import { formatDistanceToNow } from 'date-fns';
 import './App.css';
 
 import NewTaskForm from '../NewTaskForm';
 import TaskList from '../TaskList';
+import { taskTypeStatuses } from '../Task';
 import Footer from '../Footer';
 
 export default class App extends PureComponent {
@@ -21,26 +21,23 @@ export default class App extends PureComponent {
       {
         taskDescription: 'Go for a walk',
         taskCreated: Date.now(),
-				taskCreatedToNow: formatDistanceToNow(Date.now(), { includeSeconds: true }),
         id: 1,
         done: false,
-        taskType: 'active',
+        taskType: taskTypeStatuses.active,
       },
       {
         taskDescription: 'Do my home task',
         taskCreated: Date.now(),
-				taskCreatedToNow: formatDistanceToNow(Date.now(), { includeSeconds: true }),
         id: 2,
         done: false,
-        taskType: 'active',
+        taskType: taskTypeStatuses.active,
       },
       {
         taskDescription: 'Have a dinner',
         taskCreated: Date.now(),
-				taskCreatedToNow: formatDistanceToNow(Date.now(), { includeSeconds: true }),
         id: 3,
         done: false,
-        taskType: 'active',
+        taskType: taskTypeStatuses.active,
       },
     ],
 
@@ -49,25 +46,20 @@ export default class App extends PureComponent {
 	
 	componentDidMount() {
     const { refreshInterval } = this.props;
-    this.timerId = setInterval(this.refreshTaskTime, refreshInterval);
+    this.state.timerId = setInterval(this.refreshTaskTime, refreshInterval);
   }
 
   componentWillUnmount() {
     clearInterval(this.timerId);
   }
 	
-	refreshTaskTime = () => {
-		this.setState(({ tasksData }) => {
-			const newTasksData = tasksData.map((elem) => {
-				const newElem = {...elem};
-				
-				newElem.taskCreatedToNow = formatDistanceToNow(newElem.taskCreated, { includeSeconds: true });
-				return newElem;
-			});
-			
-			return { tasksData: newTasksData };
-		});
-  };
+	refreshTaskTime = () => this.setState(() => {
+		const { refreshInterval } = this.props;
+		const { timerId } = this.state;
+		
+		clearInterval(timerId);
+		return {timerId: setInterval(this.refreshTaskTime, refreshInterval)};
+	});
 
   findElem = (id, arr) => arr.findIndex((item) => item.id === id);
 
@@ -77,7 +69,7 @@ export default class App extends PureComponent {
       const newTasksData = [...tasksData.slice(0)];
 			const elem = newTasksData[taskIndex];
 			
-      elem.taskType += ' editing';
+      elem.taskType += taskTypeStatuses.editing;
       return { tasksData: newTasksData };
     });
   };
@@ -89,8 +81,8 @@ export default class App extends PureComponent {
       const elem = newTasksData[taskIndex];
 			
 			elem.taskDescription = newTaskDescription;
-      elem.taskType = 'active';
-      if (elem.done) elem.taskType = 'completed';
+      elem.taskType = taskTypeStatuses.active;
+      if (elem.done) elem.taskType = taskTypeStatuses.completed;
 
       return { tasksData: newTasksData };
     });
@@ -103,17 +95,12 @@ export default class App extends PureComponent {
       const newTask = {
         taskDescription: task,
         taskCreated: taskCreatedTime,
-				taskCreatedToNow: formatDistanceToNow(taskCreatedTime, { includeSeconds: true }),
         id,
         done: false,
-        taskType: 'active',
+        taskType: taskTypeStatuses.active,
       };
       const newArr = [...tasksData.slice(0)];
       newArr.push(newTask);
-			
-			const { refreshInterval } = this.props;
-			clearInterval(this.timerId);
-    	this.timerId = setInterval(this.refreshTaskTime, refreshInterval);
 
       return { tasksData: newArr };
     });
@@ -135,8 +122,8 @@ export default class App extends PureComponent {
       const elem = tasksData[taskIndex];
       const done = !elem.done;
 
-      let taskType = 'active';
-      if (done) taskType = 'completed';
+      let taskType = taskTypeStatuses.active;
+      if (done) taskType = taskTypeStatuses.completed;
 
       const newTaskItem = { ...elem, done, taskType };
       const newTasksData = [...tasksData.slice(0, taskIndex), newTaskItem, ...tasksData.slice(taskIndex + 1)];
