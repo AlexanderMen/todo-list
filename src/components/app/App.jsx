@@ -50,7 +50,8 @@ export default class App extends PureComponent {
   }
 
   componentWillUnmount() {
-    clearInterval(this.timerId);
+		const {timerId} = this.state;
+    clearInterval(timerId);
   }
 	
 	refreshTaskTime = () => this.setState(() => {
