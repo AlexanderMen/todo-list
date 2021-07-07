@@ -9,7 +9,7 @@ import Footer from '../Footer';
 
 export default class App extends PureComponent {
 	static defaultProps = {
-    refreshInterval: 30000,
+    refreshInterval: 1000,
   };
 	
 	static propTypes = {
@@ -24,6 +24,8 @@ export default class App extends PureComponent {
         id: 1,
         done: false,
         taskType: taskTypeStatuses.active,
+				taskTime: `0:00`,
+				timerIsActive: true,
       },
       {
         taskDescription: 'Do my home task',
@@ -31,6 +33,8 @@ export default class App extends PureComponent {
         id: 2,
         done: false,
         taskType: taskTypeStatuses.active,
+				taskTime: `1:13`,
+				timerIsActive: true,
       },
       {
         taskDescription: 'Have a dinner',
@@ -38,6 +42,8 @@ export default class App extends PureComponent {
         id: 3,
         done: false,
         taskType: taskTypeStatuses.active,
+				taskTime: `12:07`,
+				timerIsActive: true,
       },
     ],
 
@@ -54,13 +60,46 @@ export default class App extends PureComponent {
     clearInterval(timerId);
   }
 	
-	refreshTaskTime = () => this.setState(() => {
+	refreshTaskTime = () => this.setState(({ timerId, tasksData }) => {
 		const { refreshInterval } = this.props;
-		const { timerId } = this.state;
+		
+		const newTasksData = tasksData.map(task => {
+			const newTask = {...task};
+			if(!task.timerIsActive) return newTask
+			
+			const time = newTask.taskTime.split(':');
+			let min = time[0];
+			let sec = time[1];
+			
+			if(sec === '59') {
+				sec = 0;
+				min = +min + 1;
+			} else {
+				sec = +sec + 1;
+			};
+			
+			if(sec < 10) sec = `0${sec}`
+			
+			newTask.taskTime = `${min}:${sec}`;
+			return newTask;
+		});
 		
 		clearInterval(timerId);
-		return {timerId: setInterval(this.refreshTaskTime, refreshInterval)};
+		return {
+			timerId: setInterval(this.refreshTaskTime, refreshInterval),
+			tasksData: newTasksData,
+		};
 	});
+	
+	pushedTaskTimerBtn = (id, buttonType) => {
+		this.setState(({ tasksData }) => {
+      const taskIndex = this.findElem(id, tasksData);
+      const newTasksData = [...tasksData];
+			
+			newTasksData[taskIndex].timerIsActive = (buttonType === 'play');
+      return { tasksData: newTasksData };
+    });
+	};
 
   findElem = (id, arr) => arr.findIndex((item) => item.id === id);
 
@@ -89,16 +128,24 @@ export default class App extends PureComponent {
     });
   };
 
-  addTask = (task) => {
+  addTask = (task, min = '0', sec = '00') => {
     this.setState(({ tasksData }) => {
       const id = Math.round(Math.random() * 1000);
 			const taskCreatedTime = Date.now();
+			let minutes = min;
+			let seconds = sec;
+			
+			if(!minutes || Number.isNaN(Number(minutes))) minutes = '0'
+			if(!seconds || seconds > 59 || Number.isNaN(Number(seconds))) seconds = '00'
+			
       const newTask = {
         taskDescription: task,
         taskCreated: taskCreatedTime,
         id,
         done: false,
         taskType: taskTypeStatuses.active,
+				taskTime: `${minutes}:${seconds}`,
+				timerIsActive: true,
       };
       const newArr = [...tasksData.slice(0)];
       newArr.push(newTask);
@@ -159,6 +206,7 @@ export default class App extends PureComponent {
             onUpdateTask={this.updateTask}
             onDelete={this.deleteTask}
             onComplete={this.isTaskComplete}
+            onPushedTaskTimerBtn={this.pushedTaskTimerBtn}
           />
           <Footer
             tasksLeft={tasksLeft}

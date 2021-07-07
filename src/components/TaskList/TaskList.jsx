@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import './TaskList.css';
 import { Task } from '../Task';
 
-const TaskList = ({ tasks, showingElems, onDelete, onComplete, onEditTask, onUpdateTask }) => {
+const TaskList = ({ tasks, showingElems, onDelete, onComplete, onEditTask, onUpdateTask, onPushedTaskTimerBtn }) => {
   const listElems = tasks.map((item) => {
     const { ...itemProps } = item;
 
@@ -16,6 +16,7 @@ const TaskList = ({ tasks, showingElems, onDelete, onComplete, onEditTask, onUpd
         onUpdateTask={onUpdateTask}
         onDelete={() => onDelete(item.id)}
         onComplete={() => onComplete(item.id)}
+        onPushedTaskTimerBtn={buttonType => onPushedTaskTimerBtn(item.id, buttonType)}
       />
     );
   });
@@ -30,6 +31,7 @@ TaskList.propTypes = {
   onComplete: PropTypes.func.isRequired,
   onEditTask: PropTypes.func.isRequired,
   onUpdateTask: PropTypes.func.isRequired,
+	onPushedTaskTimerBtn: PropTypes.func.isRequired,
 };
 
 export default TaskList;
