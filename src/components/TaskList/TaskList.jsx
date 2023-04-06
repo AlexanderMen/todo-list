@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import './TaskList.css';
 import { Task } from '../Task';
 
-const TaskList = ({ tasks, showingElems, onDelete, onComplete, onEditTask, onUpdateTask, onPushedTaskTimerBtn }) => {
+const TaskList = ({ tasks }) => {
   const listElems = tasks.map((item) => {
     const { ...itemProps } = item;
 
@@ -11,12 +11,6 @@ const TaskList = ({ tasks, showingElems, onDelete, onComplete, onEditTask, onUpd
       <Task
         key={item.id}
         {...itemProps}
-        showingElems={showingElems}
-        onEditTask={() => onEditTask(item.id)}
-        onUpdateTask={onUpdateTask}
-        onDelete={() => onDelete(item.id)}
-        onComplete={() => onComplete(item.id)}
-        onPushedTaskTimerBtn={buttonType => onPushedTaskTimerBtn(item.id, buttonType)}
       />
     );
   });
@@ -25,13 +19,15 @@ const TaskList = ({ tasks, showingElems, onDelete, onComplete, onEditTask, onUpd
 };
 
 TaskList.propTypes = {
-  tasks: PropTypes.arrayOf(PropTypes.object).isRequired,
-	showingElems: PropTypes.string.isRequired,
-  onDelete: PropTypes.func.isRequired,
-  onComplete: PropTypes.func.isRequired,
-  onEditTask: PropTypes.func.isRequired,
-  onUpdateTask: PropTypes.func.isRequired,
-	onPushedTaskTimerBtn: PropTypes.func.isRequired,
+  tasks: PropTypes.arrayOf(PropTypes.shape({
+		taskDescription: PropTypes.string,
+		taskCreated: PropTypes.number,
+		id: PropTypes.number,
+		done: PropTypes.bool,
+		taskType: PropTypes.string,
+		taskTime: PropTypes.string,
+		timerIsActive: PropTypes.bool,
+	})).isRequired,
 };
 
 export default TaskList;

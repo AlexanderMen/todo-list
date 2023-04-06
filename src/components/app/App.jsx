@@ -1,5 +1,4 @@
-import React, { PureComponent } from 'react';
-import PropTypes from 'prop-types';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 
 import NewTaskForm from '../NewTaskForm';
@@ -7,17 +6,8 @@ import TaskList from '../TaskList';
 import { taskTypeStatuses } from '../Task';
 import Footer from '../Footer';
 
-export default class App extends PureComponent {
-	static defaultProps = {
-    refreshInterval: 1000,
-  };
-	
-	static propTypes = {
-    refreshInterval: PropTypes.number,
-	};
-	
-  state = {
-    tasksData: [
+const App = () => {
+	const [ tasksData, setTasksData ] = useState([
       {
         taskDescription: 'Go for a walk',
         taskCreated: Date.now(),
@@ -45,98 +35,92 @@ export default class App extends PureComponent {
 				taskTime: `12:07`,
 				timerIsActive: true,
       },
-    ],
+	]);
+	
+	const [ showingElems, setShowingElems ] = useState('all');
+	
+	useEffect(() => {
+		const timerId = setInterval(refreshTaskTime, 1000);
+		return () => clearInterval(timerId);
+	}, []);
+	
+	
+	function refreshTaskTime() {
+		setTasksData((prevTasksData) => {
+			const newTasksData = prevTasksData.map(task => {
+				const newTask = {...task};
+				if(!task.timerIsActive) return newTask
 
-    showingElems: 'all',
-  };
-	
-	componentDidMount() {
-    const { refreshInterval } = this.props;
-    this.state.timerId = setInterval(this.refreshTaskTime, refreshInterval);
-  }
+				const time = newTask.taskTime.split(':');
+				let min = time[0];
+				let sec = time[1];
 
-  componentWillUnmount() {
-		const {timerId} = this.state;
-    clearInterval(timerId);
-  }
+				if(sec === '59') {
+					sec = 0;
+					min = +min + 1;
+				} else {
+					sec = +sec + 1;
+				};
+
+				if(sec < 10) sec = `0${sec}`
+
+				newTask.taskTime = `${min}:${sec}`;
+				return newTask;
+			});
+
+			return newTasksData;
+		})
+	};
 	
-	refreshTaskTime = () => this.setState(({ timerId, tasksData }) => {
-		const { refreshInterval } = this.props;
-		
-		const newTasksData = tasksData.map(task => {
-			const newTask = {...task};
-			if(!task.timerIsActive) return newTask
-			
-			const time = newTask.taskTime.split(':');
-			let min = time[0];
-			let sec = time[1];
-			
-			if(sec === '59') {
-				sec = 0;
-				min = +min + 1;
-			} else {
-				sec = +sec + 1;
-			};
-			
-			if(sec < 10) sec = `0${sec}`
-			
-			newTask.taskTime = `${min}:${sec}`;
-			return newTask;
-		});
-		
-		clearInterval(timerId);
-		return {
-			timerId: setInterval(this.refreshTaskTime, refreshInterval),
-			tasksData: newTasksData,
-		};
-	});
+	function findElem(id, arr) {
+		return arr.findIndex((item) => item.id === id);
+	};
 	
-	pushedTaskTimerBtn = (id, buttonType) => {
-		this.setState(({ tasksData }) => {
-      const taskIndex = this.findElem(id, tasksData);
-      const newTasksData = [...tasksData];
+	function pushedTaskTimerBtn(id, buttonType) {
+		setTasksData((prevTasksData) => {
+      const taskIndex = findElem(id, prevTasksData);
+      const newTasksData = [...prevTasksData];
 			
 			newTasksData[taskIndex].timerIsActive = (buttonType === 'play');
-      return { tasksData: newTasksData };
+      return newTasksData;
     });
 	};
 
-  findElem = (id, arr) => arr.findIndex((item) => item.id === id);
-
-  editTask = (id) => {
-    this.setState(({ tasksData }) => {
-      const taskIndex = this.findElem(id, tasksData);
-      const newTasksData = [...tasksData.slice(0)];
+  function editTask(id) {
+    setTasksData((prevTasksData) => {
+      const taskIndex = findElem(id, prevTasksData);
+      const newTasksData = [...prevTasksData.slice(0)];
 			const elem = newTasksData[taskIndex];
 			
       elem.taskType += taskTypeStatuses.editing;
-      return { tasksData: newTasksData };
+      return newTasksData;
     });
   };
 
-  updateTask = (id, newTaskDescription) => {
-    this.setState(({ tasksData }) => {
-      const taskIndex = this.findElem(id, tasksData);
-      const newTasksData = [...tasksData.slice(0)];
+  function updateTask(id, newTaskDescription) {
+    setTasksData((prevTasksData) => {
+      const taskIndex = findElem(id, prevTasksData);
+      const newTasksData = [...prevTasksData.slice(0)];
       const elem = newTasksData[taskIndex];
 			
 			elem.taskDescription = newTaskDescription;
       elem.taskType = taskTypeStatuses.active;
       if (elem.done) elem.taskType = taskTypeStatuses.completed;
 
-      return { tasksData: newTasksData };
+      return newTasksData;
     });
   };
 
-  addTask = (task, min = '0', sec = '00') => {
-    this.setState(({ tasksData }) => {
+  function addTask(task, min = '0', sec = '00') {
+    setTasksData((prevTasksData) => {
       const id = Math.round(Math.random() * 1000);
 			const taskCreatedTime = Date.now();
 			let minutes = min;
 			let seconds = sec;
 			
-			if(!minutes || Number.isNaN(Number(minutes))) minutes = '0'
-			if(!seconds || seconds > 59 || Number.isNaN(Number(seconds))) seconds = '00'
+			if(!minutes || minutes < 0  || Number.isNaN(Number(minutes))) minutes = '0'
+			if(!seconds || seconds > 59 || seconds <= 0 || Number.isNaN(Number(seconds))) seconds = '00'
+			if(seconds < 10 && seconds > 0) seconds = `0${seconds}`
 			
       const newTask = {
         taskDescription: task,
@@ -147,74 +131,79 @@ export default class App extends PureComponent {
 				taskTime: `${minutes}:${seconds}`,
 				timerIsActive: true,
       };
-      const newArr = [...tasksData.slice(0)];
+      const newArr = [...prevTasksData.slice(0)];
       newArr.push(newTask);
 
-      return { tasksData: newArr };
+      return newArr;
     });
   };
 
-  deleteTask = (id) => {
-    this.setState(({ tasksData }) => {
-      const taskIndex = this.findElem(id, tasksData);
+  function deleteTask(id) {
+    setTasksData((prevTasksData) => {
+      const taskIndex = findElem(id, prevTasksData);
 
-      const newTasksData = [...tasksData.slice(0, taskIndex), ...tasksData.slice(taskIndex + 1)];
+      const newTasksData = [...prevTasksData.slice(0, taskIndex), ...prevTasksData.slice(taskIndex + 1)];
 
-      return { tasksData: newTasksData };
+      return newTasksData;
     });
   };
 
-  isTaskComplete = (id) => {
-    this.setState(({ tasksData }) => {
-      const taskIndex = this.findElem(id, tasksData);
-      const elem = tasksData[taskIndex];
+  function isTaskComplete(id) {
+    setTasksData((prevTasksData) => {
+      const taskIndex = findElem(id, prevTasksData);
+      const elem = prevTasksData[taskIndex];
       const done = !elem.done;
 
       let taskType = taskTypeStatuses.active;
       if (done) taskType = taskTypeStatuses.completed;
 
       const newTaskItem = { ...elem, done, taskType };
-      const newTasksData = [...tasksData.slice(0, taskIndex), newTaskItem, ...tasksData.slice(taskIndex + 1)];
+      const newTasksData = [...prevTasksData.slice(0, taskIndex), newTaskItem, ...prevTasksData.slice(taskIndex + 1)];
 
-      return { tasksData: newTasksData };
+      return newTasksData;
     });
   };
 
-  showElems = showingElems => this.setState({showingElems,});
+  function showElems(elems) {
+		setShowingElems(elems);
+	};
 
-  clearCompleted = () => {
-    const { tasksData } = this.state;
+  function clearCompleted() {
     const newTasksData = tasksData.filter((el) => el.done === false);
-    this.setState({ tasksData: newTasksData });
+    setTasksData(newTasksData);
   };
 
-  render() {
-    const { tasksData, showingElems } = this.state;
-    const tasksLeft = tasksData.filter((el) => !el.done).length;
+	const tasksLeft = tasksData.filter((el) => !el.done).length;
+	
+	const tasksContextValue = {
+		showingElems,
+		onEditTask: id => editTask(id),
+		onUpdateTask: (id, newTaskDescription) => updateTask(id, newTaskDescription),
+		onDelete: id => deleteTask(id),
+		onComplete: id => isTaskComplete(id),
+		onPushedTaskTimerBtn: (id, buttonType) => pushedTaskTimerBtn(id, buttonType),
+	};
 
-    return (
-      <section className="todoapp">
-        <header className="header">
-          <h1>todos</h1>
-          <NewTaskForm onAdd={this.addTask} />
-        </header>
-        <section className="main">
-          <TaskList
-            tasks={tasksData}
-            showingElems={showingElems}
-            onEditTask={this.editTask}
-            onUpdateTask={this.updateTask}
-            onDelete={this.deleteTask}
-            onComplete={this.isTaskComplete}
-            onPushedTaskTimerBtn={this.pushedTaskTimerBtn}
-          />
-          <Footer
-            tasksLeft={tasksLeft}
-            onClearCompleted={this.clearCompleted}
-            onShowElems={this.showElems}
-          />
-        </section>
-      </section>
-    );
-  }
-}
+	return (
+		<section className="todoapp">
+			<header className="header">
+				<h1>todos</h1>
+				<NewTaskForm onAdd={ (task, min, sec) => addTask(task, min, sec) } />
+			</header>
+			<section className="main">
+				<TasksContext.Provider value={tasksContextValue}>
+					<TaskList tasks={tasksData} />
+				</TasksContext.Provider>
+				<Footer
+					tasksLeft={tasksLeft}
+					onClearCompleted={ () => clearCompleted() }
+					onShowElems={ elems => showElems(elems) }
+				/>
+			</section>
+		</section>
+	);
+};
+
+export { App };
+
+export const TasksContext = React.createContext();

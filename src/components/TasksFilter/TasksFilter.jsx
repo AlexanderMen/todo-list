@@ -1,21 +1,13 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import './TasksFilter.css';
 
-export default class TasksFilter extends Component {
-  state = { selectedElems: 'all' };
+const TasksFilter = ({ onShowElems }) => {
+	const [ selectedElems, setSelectedElems ] = useState('all');
 
-  static propTypes = {
-    onShowElems: PropTypes.func.isRequired,
-  };
-
-  isSelected = (showElemsType) => {
-		this.setState({ selectedElems: showElemsType });
-  };
+  const isSelected = showElemsType => setSelectedElems(showElemsType);
 	
-	makeListItem = (showElems) => {
-		const { onShowElems } = this.props;
-		const { selectedElems } = this.state;
+	const makeListItem = (showElems) => {
 		const showElemsType = showElems.toLowerCase();
 		let selected = '';
 		
@@ -28,7 +20,7 @@ export default class TasksFilter extends Component {
 					className={selected}
 					onClick={() => {
 						onShowElems(showElemsType);
-						this.isSelected(showElemsType);
+						isSelected(showElemsType);
 					}}>
 					{showElems}
 				</button>
@@ -36,13 +28,17 @@ export default class TasksFilter extends Component {
 		);
 	};
 
-  render() {
-    return (
-      <ul className="filters">
-				{this.makeListItem('All')}
-        {this.makeListItem('Active')}
-        {this.makeListItem('Completed')}
-      </ul>
-    );
-  }
-}
+	return (
+		<ul className="filters">
+			{makeListItem('All')}
+			{makeListItem('Active')}
+			{makeListItem('Completed')}
+		</ul>
+	);
+};
+
+TasksFilter.propTypes = {
+	onShowElems: PropTypes.func.isRequired,
+};
+
+export default TasksFilter;
